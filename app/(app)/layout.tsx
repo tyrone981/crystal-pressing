@@ -2,7 +2,6 @@
 import { getSession } from "@/lib/session";
 import { Sidebar } from "@/components/layout/sidebar";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { GlowCursorBackground } from "@/components/shared/glow-cursor-background";
 
 export default async function AppLayout({
   children,
@@ -22,7 +21,6 @@ export default async function AppLayout({
           <div className="absolute -top-16 -left-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute bottom-10 -right-10 h-52 w-52 rounded-full border border-white/15" />
         </div>
-        <GlowCursorBackground />
         <main className="relative z-10 pb-24 md:pb-0">
           <div className="mx-3 mt-4 min-h-[calc(100vh-2rem)] rounded-3xl bg-background p-1 shadow-xl md:mx-0 md:mt-0 md:min-h-0 md:rounded-none md:bg-transparent md:p-0 md:shadow-none">
             {children}
