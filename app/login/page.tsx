@@ -28,13 +28,48 @@ export default function LoginPage() {
   const [idUtilisateur, setIdUtilisateur] = useState("");
   const [codePin, setCodePin] = useState("");
   const [envoi, setEnvoi] = useState(false);
+  const [chargement, setChargement] = useState(true);
+  const [erreur, setErreur] = useState("");
+  const [creation, setCreation] = useState(false);
+  const [nom, setNom] = useState("");
+  const [role, setRole] = useState("RECEPTION");
 
   useEffect(() => {
     fetch("/api/utilisateurs")
-      .then((res) => res.json())
-      .then((data) => setUtilisateurs(data.utilisateurs ?? []))
-      .catch(() => toast.error("Impossible de charger la liste des agents"));
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Impossible de charger les agents");
+        setUtilisateurs(data.utilisateurs ?? []);
+      })
+      .catch((error: Error) => setErreur(error.message))
+      .finally(() => setChargement(false));
   }, []);
+
+  async function creerPremierAgent() {
+    setEnvoi(true);
+    try {
+      const res = await fetch("/api/utilisateurs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nom, role, code_pin: codePin }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(typeof data.error === "string" ? data.error : "Création impossible");
+        return;
+      }
+      toast.success("Agent créé. Vous pouvez vous connecter.");
+      setCreation(false);
+      setErreur("");
+      setCodePin("");
+      const agents = await fetch("/api/utilisateurs").then((response) => response.json());
+      setUtilisateurs(agents.utilisateurs ?? []);
+    } catch {
+      toast.error("Erreur réseau");
+    } finally {
+      setEnvoi(false);
+    }
+  }
 
   async function seConnecter() {
     setEnvoi(true);
@@ -84,21 +119,53 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-8 space-y-4">
-          <div>
-            <Label>Agent</Label>
-            <Select value={idUtilisateur} onValueChange={(value) => setIdUtilisateur(value ?? "")}>
-              <SelectTrigger className="mt-1.5 w-full">
-                <SelectValue placeholder="Sélectionner votre nom" />
-              </SelectTrigger>
-              <SelectContent>
-                {utilisateurs.map((u) => (
-                  <SelectItem key={u.id_utilisateur} value={String(u.id_utilisateur)}>
-                    {u.nom} — {u.role}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {erreur && <p className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{erreur}</p>}
+          {!chargement && utilisateurs.length === 0 && !erreur && (
+            <p className="rounded-md bg-muted p-3 text-sm text-muted-foreground">
+              Aucun agent n&apos;est configuré. Créez le premier agent pour initialiser l&apos;accès.
+            </p>
+          )}
+          {utilisateurs.length === 0 && !erreur && (
+            <Button type="button" variant="outline" className="w-full" onClick={() => setCreation(!creation)}>
+              {creation ? "Retour à la connexion" : "Créer le premier agent"}
+            </Button>
+          )}
+          {creation ? (
+            <>
+              <div>
+                <Label>Nom</Label>
+                <Input className="mt-1.5" value={nom} onChange={(event) => setNom(event.target.value)} placeholder="Nom de l&apos;agent" />
+              </div>
+              <div>
+                <Label>Rôle</Label>
+                <Select value={role} onValueChange={(value) => setRole(value ?? "RECEPTION")}>
+                  <SelectTrigger className="mt-1.5 w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RECEPTION">Réception</SelectItem>
+                    <SelectItem value="LAVAGE">Lavage</SelectItem>
+                    <SelectItem value="REPASSAGE">Repassage</SelectItem>
+                    <SelectItem value="GERANT">Gérant</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : (
+            <div>
+              <Label>Agent</Label>
+              <Select value={idUtilisateur} onValueChange={(value) => setIdUtilisateur(value ?? "")}>
+                <SelectTrigger className="mt-1.5 w-full">
+                  <SelectValue placeholder={chargement ? "Chargement..." : "Sélectionner votre nom"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {utilisateurs.map((u) => (
+                    <SelectItem key={u.id_utilisateur} value={String(u.id_utilisateur)}>
+                      {u.nom} — {u.role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div>
             <Label>Code PIN</Label>
@@ -109,8 +176,8 @@ export default function LoginPage() {
                 inputMode="numeric"
                 maxLength={10}
                 value={codePin}
-                onChange={(e) => setCodePin(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && seConnecter()}
+                onChange={(e) => setCodePin(e.target.value.replace(/\D/g, ""))}
+                onKeyDown={(e) => e.key === "Enter" && (creation ? creerPremierAgent() : seConnecter())}
                 className="pl-9"
                 placeholder="••••"
               />
@@ -120,10 +187,10 @@ export default function LoginPage() {
           <Button
             className="w-full"
             size="lg"
-            onClick={seConnecter}
-            disabled={!idUtilisateur || !codePin || envoi}
+            onClick={creation ? creerPremierAgent : seConnecter}
+            disabled={creation ? !nom || codePin.length < 4 || envoi : !idUtilisateur || !codePin || envoi}
           >
-            {envoi ? "Connexion..." : "Se connecter"}
+            {envoi ? "Traitement..." : creation ? "Créer l&apos;agent" : "Se connecter"}
           </Button>
         </div>
       </div>

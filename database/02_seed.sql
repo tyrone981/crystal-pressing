@@ -26,7 +26,7 @@ INSERT INTO services (nom_service, majoration_pct, delai_standard_h) VALUES
 ('Détachage spécifique', 30.00, 48);
 
 INSERT INTO utilisateurs (nom, role, code_pin_hash) VALUES
-('Gérant Principal', 'GERANT', '$2a$10$placeholder'),
-('Agent Réception', 'RECEPTION', '$2a$10$placeholder'),
-('Agent Lavage', 'LAVAGE', '$2a$10$placeholder'),
-('Agent Repassage', 'REPASSAGE', '$2a$10$placeholder');
+('Gérant Principal', 'GERANT', '$2b$10$kjQ/o3c1APYknL.V/YiAd.vMjlSn7k0Ov13GQeGwfgKRT9kFEswsy'),
+('Agent Réception', 'RECEPTION', '$2b$10$kjQ/o3c1APYknL.V/YiAd.vMjlSn7k0Ov13GQeGwfgKRT9kFEswsy'),
+('Agent Lavage', 'LAVAGE', '$2b$10$kjQ/o3c1APYknL.V/YiAd.vMjlSn7k0Ov13GQeGwfgKRT9kFEswsy'),
+('Agent Repassage', 'REPASSAGE', '$2b$10$kjQ/o3c1APYknL.V/YiAd.vMjlSn7k0Ov13GQeGwfgKRT9kFEswsy');
