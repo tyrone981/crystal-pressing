@@ -15,9 +15,10 @@ export async function GET() {
       "SELECT id_utilisateur, nom, role FROM utilisateurs WHERE est_actif = TRUE ORDER BY role"
     );
     return NextResponse.json({ utilisateurs });
-  } catch {
+  } catch (error: any) {
+    console.error("--- ERREUR API UTILISATEURS ---:", error?.message || error);
     return NextResponse.json(
-      { error: "Base de données indisponible", utilisateurs: [] },
+      { error: "Base de données indisponible", details: error?.message, utilisateurs: [] },
       { status: 500 }
     );
   }
@@ -66,3 +67,4 @@ export async function POST(request: Request) {
     );
   }
 }
+

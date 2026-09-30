@@ -1,4 +1,6 @@
-import mysql, { type ExecuteValues } from "mysql2/promise";
+﻿const fs = require('fs');
+
+const dbContent = import mysql, { type ExecuteValues } from "mysql2/promise";
 
 declare global {
   var mysqlPool: mysql.Pool | undefined;
@@ -55,3 +57,7 @@ export async function transaction<T>(
     conn.release();
   }
 }
+;
+
+fs.writeFileSync("C:/Users/yvanl/df project/crystal-pressing/lib/db.ts", dbContent, "utf8");
+console.log("Updated lib/db.ts successfully!");

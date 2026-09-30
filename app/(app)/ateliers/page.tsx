@@ -40,10 +40,16 @@ export default function AteliersPage() {
   const [ongletActif, setOngletActif] = useState("RECEPTION");
 
   async function charger() {
-    const res = await fetch("/api/ateliers");
-    const data = await res.json();
-    setArticles(data.articles ?? []);
-    setChargement(false);
+    try {
+      const res = await fetch("/api/ateliers");
+      if (!res.ok) throw new Error("Erreur lors du chargement des ateliers");
+      const data: { articles?: ArticleKanban[] } = await res.json();
+      setArticles(data.articles ?? []);
+    } catch {
+      toast.error("Impossible de charger les ateliers");
+    } finally {
+      setChargement(false);
+    }
   }
 
   useEffect(() => {
