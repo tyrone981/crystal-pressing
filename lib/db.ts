@@ -1,39 +1,54 @@
-import mysql, { type ExecuteValues } from "mysql2/promise";
+import mysql from "mysql2/promise";
 
 declare global {
   var mysqlPool: mysql.Pool | undefined;
 }
 
-const host = process.env.DB_HOST || process.env.MYSQL_HOST || "localhost";
-const isAiven = host.includes("aivencloud") || (process.env.DATABASE_URL && process.env.DATABASE_URL.includes("aivencloud"));
+function buildPool(): mysql.Pool {
+  if (process.env.DATABASE_URL) {
+    return mysql.createPool({
+      uri: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+      decimalNumbers: true,
+      dateStrings: false,
+      timezone: "+01:00",
+    });
+  }
 
-export const pool =
-  global.mysqlPool ??
-  mysql.createPool({
-    host: process.env.DB_HOST || process.env.MYSQL_HOST || "localhost",
-    port: Number(process.env.DB_PORT || process.env.MYSQL_PORT || 3306),
-    user: process.env.DB_USER || process.env.MYSQL_USER || "root",
-    password: process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || "",
-    database: process.env.DB_NAME || process.env.MYSQL_DATABASE || "crystal_pressing",
+  return mysql.createPool({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    ssl:
+      process.env.DB_HOST && process.env.DB_HOST !== "localhost"
+        ? { rejectUnauthorized: false }
+        : undefined,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
     decimalNumbers: true,
     dateStrings: false,
     timezone: "+01:00",
-    ssl: isAiven ? { rejectUnauthorized: false } : undefined,
   });
+}
+
+export const pool = global.mysqlPool ?? buildPool();
 
 if (process.env.NODE_ENV !== "production") global.mysqlPool = pool;
 
-export async function query<T>(sql: string, params: ExecuteValues[] = []): Promise<T[]> {
+export async function query<T>(sql: string, params: any[] = []): Promise<T[]> {
   const [rows] = await pool.execute(sql, params);
   return rows as T[];
 }
 
 export async function execute(
   sql: string,
-  params: ExecuteValues[] = []
+  params: any[] = []
 ): Promise<{ insertId: number; affectedRows: number }> {
   const [result] = await pool.execute(sql, params);
   return result as { insertId: number; affectedRows: number };
