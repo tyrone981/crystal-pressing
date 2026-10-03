@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { transaction } from "@/lib/db";
+import { requireSession } from "@/lib/auth-guard";
 
 const PaiementSchema = z.object({
   montant_cfa: z.number().min(1),
   mode_reglement: z.enum(["ESPECES", "MOMO_MARCHAND", "OM_MARCHAND"]),
   reference_transaction: z.string().max(60).optional(),
-  id_utilisateur: z.number(),
 });
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireSession();
+  if ("error" in guard) return guard.error;
   const { id } = await params;
   const body = await request.json();
   const parsed = PaiementSchema.safeParse(body);
@@ -20,6 +22,7 @@ export async function POST(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   const data = parsed.data;
+  const id_utilisateur = guard.session.id_utilisateur;
 
   try {
     await transaction(async (conn) => {
@@ -44,7 +47,7 @@ export async function POST(
       await conn.execute(
         `INSERT INTO paiements (montant_cfa, mode_reglement, reference_transaction, id_commande, id_utilisateur)
          VALUES (?, ?, ?, ?, ?)`,
-        [data.montant_cfa, data.mode_reglement, data.reference_transaction ?? null, id, data.id_utilisateur]
+        [data.montant_cfa, data.mode_reglement, data.reference_transaction ?? null, id, id_utilisateur]
       );
     });
     return NextResponse.json({ ok: true });

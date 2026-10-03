@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { transaction } from "@/lib/db";
 import { verifierSecret } from "@/lib/hash-pin";
+import { requireSession } from "@/lib/auth-guard";
 
 const LivraisonSchema = z.object({
   code_retrait: z.string().min(4).max(6),
@@ -13,6 +14,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireSession();
+  if ("error" in guard) return guard.error;
   const { id } = await params;
   const body = await request.json();
   const parsed = LivraisonSchema.safeParse(body);
@@ -20,6 +23,14 @@ export async function POST(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
   const data = parsed.data;
+
+  const derogationDemandee = data.derogation_gerant === true;
+  if (derogationDemandee && guard.session.role !== "GERANT") {
+    return NextResponse.json(
+      { error: "Seul le gerant peut accorder une derogation (RG-14)" },
+      { status: 403 }
+    );
+  }
 
   try {
     const resultat = await transaction(async (conn) => {
@@ -50,7 +61,7 @@ export async function POST(
       const totalPaye = Number((paiementsRows as { total: number }[])[0].total);
       const resteAPayer = Number(commande.montant_total_cfa) - totalPaye;
 
-      if (resteAPayer > 0 && !data.derogation_gerant) {
+      if (resteAPayer > 0 && !derogationDemandee) {
         throw new Error(`Solde restant de ${resteAPayer} FCFA - derogation gerant requise (RG-14)`);
       }
 

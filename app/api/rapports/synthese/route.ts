@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { requireSession } from "@/lib/auth-guard";
 
 interface LigneCanal {
   mode_reglement: string;
@@ -24,6 +25,9 @@ interface CommandeSouffrance {
 }
 
 export async function GET() {
+  const guard = await requireSession();
+  if ("error" in guard) return guard.error;
+
   const encaissementsJour = await query<LigneCanal>(
     `SELECT mode_reglement, COUNT(*) AS nombre, SUM(montant_cfa) AS total_cfa
      FROM paiements

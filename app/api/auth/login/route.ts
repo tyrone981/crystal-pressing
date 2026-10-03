@@ -1,7 +1,8 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { query } from "@/lib/db";
 import { verifierSecret } from "@/lib/hash-pin";
+import { signSession } from "@/lib/session";
 
 const LoginSchema = z.object({
   id_utilisateur: z.number(),
@@ -36,25 +37,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Code PIN incorrect" }, { status: 401 });
   }
 
-  const response = NextResponse.json({
+  const sessionData = {
     id_utilisateur: utilisateur.id_utilisateur,
     nom: utilisateur.nom,
     role: utilisateur.role,
+  };
+
+  const response = NextResponse.json(sessionData);
+  response.cookies.set("session", signSession(sessionData), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 12,
+    path: "/",
   });
-  response.cookies.set(
-    "session",
-    JSON.stringify({
-      id_utilisateur: utilisateur.id_utilisateur,
-      nom: utilisateur.nom,
-      role: utilisateur.role,
-    }),
-    {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 12,
-      path: "/",
-    }
-  );
   return response;
 }

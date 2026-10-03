@@ -1,0 +1,4 @@
+utilisateur_1_gerant -> $2b$10$iiEs9MHbE95cSEiC96izluCQYy7LBZVvhQ6uvya2dsbgoMJIxwOKe
+utilisateur_2_reception -> $2b$10$gvP6FJbmO3jSXqP.GY1TUe8NYX3FxE8R8U.ZxfR6yvWk/aMjiALAi
+utilisateur_3_lavage -> $2b$10$QM5jC7oAMf3V.4u/iXqtd.UucT55lFBL1i2jMs49tzflJQUNIeiFy
+utilisateur_4_repassage -> $2b$10$S/OKXX6QvnSJuf9R5D4oZeWSjqNkelPr5VQdHh.wbmrPerX7GzNj6

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { transaction } from "@/lib/db";
+import { requireSession } from "@/lib/auth-guard";
 
 const StatutSchema = z.object({
   statut_etape: z.enum(["RECEPTION", "LAVAGE", "REPASSAGE", "PRET", "LIVRE"]),
-  id_utilisateur: z.number(),
   observation: z.string().max(200).optional(),
 });
 
@@ -12,13 +12,16 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireSession();
+  if ("error" in guard) return guard.error;
   const { id } = await params;
   const body = await request.json();
   const parsed = StatutSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { statut_etape, id_utilisateur, observation } = parsed.data;
+  const { statut_etape, observation } = parsed.data;
+  const id_utilisateur = guard.session.id_utilisateur;
 
   try {
     await transaction(async (conn) => {

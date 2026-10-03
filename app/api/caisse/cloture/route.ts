@@ -1,5 +1,6 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { requireSession } from "@/lib/auth-guard";
 
 interface LigneCloture {
   mode_reglement: string;
@@ -8,6 +9,9 @@ interface LigneCloture {
 }
 
 export async function GET() {
+  const guard = await requireSession();
+  if ("error" in guard) return guard.error;
+
   const lignes = await query<LigneCloture>(
     `SELECT mode_reglement, COUNT(*) AS nombre, SUM(montant_cfa) AS total_cfa
      FROM paiements
